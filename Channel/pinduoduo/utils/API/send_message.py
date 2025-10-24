@@ -39,6 +39,7 @@ class SendMessage(BaseRequest):
         }
 
         result = self.post(url, json_data=data)
+        self.logger.debug(f"pinduoduo send_message result: {result}")
         if result and result.get("success") == True:
             if result.get("result", {}).get("error_code") == 10002:
                 error_msg = result.get('result', {}).get('error')

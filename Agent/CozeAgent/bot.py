@@ -1,12 +1,16 @@
-from re import S
-from Agent.bot import Bot
-from bridge.context import ContextType, Context
-from bridge.reply import Reply, ReplyType
-from utils.logger import get_logger
-from config import config
-from cozepy import Coze, TokenAuth, MessageContentType, MessageType
-from Agent.CozeAgent.user_session import UserSessionManager
+import json
+
+from cozepy import Coze, TokenAuth, MessageContentType, MessageType, Message
+
 from Agent.CozeAgent.conversation_manager import ConversationManager
+from Agent.CozeAgent.user_session import UserSessionManager
+from Agent.bot import Bot
+from bridge.context import Context
+from bridge.reply import Reply, ReplyType
+from config import config
+from utils.logger import get_logger
+
+
 class CozeBot(Bot):
     def __init__(self):
         super().__init__()
@@ -31,10 +35,10 @@ class CozeBot(Bot):
             from_id = context.kwargs.get("from_uid")
             shop_id = context.kwargs.get("shop_id")
             user_id = f"{shop_id}_{from_id}"
-            
+
             # 直接使用预处理后的消息内容
             query = context.content
-            
+
             # 获取或创建会话（使用数据库管理）
             conversation_id = self.session_manager.get_session(user_id)
             if not conversation_id:
@@ -43,7 +47,7 @@ class CozeBot(Bot):
 
             # 创建消息并获取回复
             return self._create_message_and_get_reply(conversation_id, query, context)
-            
+
         except Exception as e:
             self.logger.error(f"处理消息异常: {str(e)}", exc_info=True)
             return Reply(ReplyType.TEXT, "消息处理失败")
@@ -51,12 +55,9 @@ class CozeBot(Bot):
     def _create_message_and_get_reply(self, conversation_id, query, context):
         """创建消息并获取回复"""
         try:
-            message = self.coze_client.conversations.messages.create(
-                conversation_id=conversation_id,
-                content=query,
-                role="user",
-                content_type="object_string"
-            )
+
+            query_obj = json.loads(query)
+            message = Message.build_user_question_text(query_obj[0].get("text"))
             self.logger.debug(f"消息已创建: {message.id}")
 
             # 获取用户ID
@@ -70,13 +71,12 @@ class CozeBot(Bot):
                 auto_save_history=True
             )
 
-
             for messages in chat.messages:
                 if messages.type.value == MessageType.ANSWER:
                     if messages.content_type.value == MessageContentType.TEXT:
                         text_reply = Reply(ReplyType.TEXT, messages.content)
 
-                        return text_reply                    
+                        return text_reply
             return Reply(ReplyType.TEXT, "未能获取到回复")
         except Exception as e:
             self.logger.error(f"消息处理失败: {str(e)}")

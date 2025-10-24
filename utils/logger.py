@@ -20,7 +20,7 @@ log_levels = {
 }
 
 # 默认配置
-DEFAULT_LOG_LEVEL = "info"
+DEFAULT_LOG_LEVEL = "debug"
 DEFAULT_LOG_FORMAT = "%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s"
 DEFAULT_LOG_FILE = "logs/app.log"
 MAX_LOG_SIZE = 10 * 1024 * 1024  # 10MB
